@@ -87,12 +87,12 @@ stages:
         dependsOn: ManualValidation
         steps:
         - template: ./templates/azure-setup.yaml
-        parameters:
-          tags: '"UseCase=Terraform" "Stage=$(System.StageName)" "Branch=$(Build.SourceBranch)"'
-          resource_group_name: "${{ variables.project_name }}-$(System.StageName)-rg"
-          storage_account_name: ${{ variables.tfstate_storage_account_name }}
-          resource_group_location: "eastus"
-          service_connection_name: ${{ variables.service_connection_name }}
+          parameters:
+            tags: '"UseCase=Terraform" "Stage=$(System.StageName)" "Branch=$(Build.SourceBranch)"'
+            resource_group_name: "${{ variables.project_name }}-$(System.StageName)-rg"
+            storage_account_name: ${{ variables.tfstate_storage_account_name }}
+            resource_group_location: "eastus"
+            service_connection_name: ${{ variables.service_connection_name }}
           
         - template: ./templates/terraform-plan.yaml
           parameters:
