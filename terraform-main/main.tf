@@ -11,6 +11,9 @@ resource "random_string" "random" {
 resource "azurerm_resource_group" "rg" {
   name     = random_uuid.rg_name.result
   location = var.rg_location
+  tags = {
+    "stage" = var.stage
+  }
 }
 
 resource "azurerm_service_plan" "appserviceplan" {
