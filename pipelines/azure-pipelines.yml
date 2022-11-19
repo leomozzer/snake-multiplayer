@@ -86,10 +86,18 @@ stages:
         displayName: "Plan for prod"
         dependsOn: ManualValidation
         steps:
+        - template: ./templates/azure-setup.yaml
+        parameters:
+          tags: '"UseCase=Terraform" "Stage=$(System.StageName)" "Branch=$(Build.SourceBranch)"'
+          resource_group_name: "${{ variables.project_name }}-$(System.StageName)-rg"
+          storage_account_name: ${{ variables.tfstate_storage_account_name }}
+          resource_group_location: "eastus"
+          service_connection_name: ${{ variables.service_connection_name }}
+          
         - template: ./templates/terraform-plan.yaml
           parameters:
             stage: $(System.StageName)
-            tfstate_storage_account_resource_group_name: ${{ variables.tfstate_storage_account_resource_group_name }}
+            tfstate_storage_account_resource_group_name: ${{ variables.project_name }}-$(System.StageName)-rg
             service_connection_name: ${{ variables.service_connection_name }}
             tfstate_storage_account_name: ${{ variables.tfstate_storage_account_name }}
             tf_version: ${{ variables.tf_version }}
@@ -105,7 +113,7 @@ stages:
         - template: ./templates/terraform-apply.yaml
           parameters:
             stage: $(System.StageName)
-            tfstate_storage_account_resource_group_name: ${{ variables.tfstate_storage_account_resource_group_name }}
+            tfstate_storage_account_resource_group_name: ${{ variables.project_name }}-$(System.StageName)-rg
             service_connection_name: ${{ variables.service_connection_name }}
             tfstate_storage_account_name: ${{ variables.tfstate_storage_account_name }}
             tf_version: ${{ variables.tf_version }}
