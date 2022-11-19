@@ -4,7 +4,7 @@ variables:
   service_connection_name: "SC-AzureDevOps" 
   tfstate_storage_account_name: "snakemultiplayer"
   tf_version: 1.2.6
-  tf_script_path: "$(System.DefaultWorkingDirectory)/terraform-live"
+  tf_script_path: "$(System.DefaultWorkingDirectory)/terraform-main"
   qualify_image_names: true
 
 pool:
@@ -18,7 +18,7 @@ stages:
       steps:
       - template: ./templates/tfsec.yaml
         parameters:
-          artifact_name: 'terraform-live'
+          artifact_name: 'terraform-main'
           working_path: ${{ variables.tf_script_path }}
   
   - stage: dev
