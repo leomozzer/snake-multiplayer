@@ -1,0 +1,115 @@
+variables:
+  build_counter: $[counter('build-counter-$(RELEASE_NAME)', 1)]
+  project_name: "snake-multiplayer"
+  service_connection_name: "SC-AzureDevOps" 
+  tfstate_storage_account_name: "snakemultiplayer"
+  tf_version: 1.2.6
+  tf_script_path: "$(System.DefaultWorkingDirectory)/terraform-live"
+  qualify_image_names: true
+
+pool:
+  vmImage: ubuntu-latest #The pool can be used not only inside of each job
+  
+stages:
+  - stage: audit
+    jobs:
+    - job: tfsec
+      displayName: Run tfsec
+      steps:
+      - template: ./templates/tfsec/tfsec.yaml
+        parameters:
+          artifact_name: 'terraform-live'
+          working_path: ${{ variables.tf_script_path }}
+  
+  - stage: dev
+    dependsOn: audit
+    condition: succeeded('audit')
+    jobs:
+    - job: TerraformPlan
+      displayName: 'Plan for dev'
+      steps:
+      - template: ./templates/steps/azure-setup.yaml
+        parameters:
+          tags: '"UseCase=Terraform" "Stage=$(System.StageName)" "Branch=$(Build.SourceBranch)" "BuildCounter={{ variables.build_counter }}"'
+          resource_group_name: "${{ variables.project_name }}-$(System.StageName)-rg"
+          storage_account_name: ${{ variables.tfstate_storage_account_name }}
+          resource_group_location: "eastus"
+          service_connection_name: ${{ variables.service_connection_name }}
+
+      - template: ./templates/steps/terraform-plan.yaml
+        parameters:
+          stage: $(System.StageName)
+          tfstate_storage_account_resource_group_name: ${{ variables.tfstate_storage_account_resource_group_name }}
+          service_connection_name: ${{ variables.service_connection_name }}
+          tfstate_storage_account_name: ${{ variables.tfstate_storage_account_name }}
+          tf_version: ${{ variables.tf_version }}
+          project_name: ${{ variables.project_name }}
+          working_path: '${{ variables.tf_script_path }}'
+          var_file: '${{ variables.tf_script_path }}/$(System.StageName).tfvars'
+          tfstate_file_name: '$(System.StageName).tfstate'
+
+    - job: TerraformApply
+      displayName: "Apply for dev"
+      dependsOn: TerraformPlan
+      steps:
+      - template: ./templates/steps/terraform-apply.yaml
+        parameters:
+          stage: $(System.StageName)
+          tfstate_storage_account_resource_group_name: ${{ variables.tfstate_storage_account_resource_group_name }}
+          service_connection_name: ${{ variables.service_connection_name }}
+          tfstate_storage_account_name: ${{ variables.tfstate_storage_account_name }}
+          tf_version: ${{ variables.tf_version }}
+          project_name: ${{ variables.project_name }}
+          working_path: '${{ variables.tf_script_path }}'
+          tfstate_file_name: '$(System.StageName).tfstate'
+          var_file: '${{ variables.tf_script_path }}/$(System.StageName).tfvars'
+
+# #### Dynamic stages based on branch name
+  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}: #Change the condition to 'refs/heads/main'
+    - stage: prod
+      dependsOn: dev
+      condition: succeeded('dev')
+      jobs:
+      - job: ManualValidation
+        pool: server
+        timeoutInMinutes: 15 # job times out in 15 minutes
+        steps:
+        - task: ManualValidation@0
+          timeoutInMinutes: 10 # task times out in 10 minutes
+          inputs:
+              notifyUsers: |
+                  mozzer.ferraz@gmail.com
+              instructions: 'Please validate the build configuration and resume'
+              onTimeout: 'reject'
+
+      - job: TerraformPlan
+        displayName: "Plan for prod"
+        dependsOn: ManualValidation
+        steps:
+        - template: ./templates/steps/terraform-plan.yaml
+          parameters:
+            stage: $(System.StageName)
+            tfstate_storage_account_resource_group_name: ${{ variables.tfstate_storage_account_resource_group_name }}
+            service_connection_name: ${{ variables.service_connection_name }}
+            tfstate_storage_account_name: ${{ variables.tfstate_storage_account_name }}
+            tf_version: ${{ variables.tf_version }}
+            project_name: ${{ variables.project_name }}
+            working_path: '${{ variables.tf_script_path }}'
+            var_file: '${{ variables.tf_script_path }}/$(System.StageName).tfvars'
+            tfstate_file_name: '$(System.StageName).tfstate'
+
+      - job: TerraformApply
+        displayName: "Apply for prod"
+        dependsOn: TerraformPlan
+        steps:
+        - template: ./templates/steps/terraform-apply.yaml
+          parameters:
+            stage: $(System.StageName)
+            tfstate_storage_account_resource_group_name: ${{ variables.tfstate_storage_account_resource_group_name }}
+            service_connection_name: ${{ variables.service_connection_name }}
+            tfstate_storage_account_name: ${{ variables.tfstate_storage_account_name }}
+            tf_version: ${{ variables.tf_version }}
+            project_name: ${{ variables.project_name }}
+            working_path: '${{ variables.tf_script_path }}'
+            tfstate_file_name: '$(System.StageName).tfstate'
+            var_file: '${{ variables.tf_script_path }}/$(System.StageName).tfvars'

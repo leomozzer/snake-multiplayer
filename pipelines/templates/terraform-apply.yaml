@@ -1,0 +1,44 @@
+# Leave parameters empty. Will be filled by terraform-pipeline.yaml
+parameters:
+  stage: ""
+  tfstate_storage_account_resource_group_name: ""
+  tfstate_storage_account_name: ""
+  tf_version: ""
+  service_connection_name: ""
+  project_name: ""
+  working_path: ""
+  tfstate_file_name: ""
+  var_file: ""
+  
+
+steps:
+  - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+    displayName: "Install Terraform ${{ parameters.tf_version }}"
+    inputs:
+      terraformVersion: ${{ parameters.tf_version }}
+
+  - powershell: New-Item -Path "${{ parameters.working_path }}" -Name "backend.tf" -Value "terraform {`r`nbackend `"azurerm`" {}`r`n}"
+    displayName: "Create backend.tf"
+
+  - powershell: New-Item -Path "${{ parameters.working_path }}" -Name "azurerm_provider.tf" -Value "provider `"azurerm`"{`r`nskip_provider_registration = true`r`nfeatures {}`r`n}"
+    displayName: "Create azurerm_provider.tf"
+
+  - task: TerraformTaskV2@2
+    displayName: "Terraform Init ${{ parameters.stage }}"
+    inputs:
+      provider: "azurerm"
+      command: "init"
+      workingDirectory: '${{ parameters.working_path }}'
+      backendServiceArm: ${{ parameters.service_connection_name }}
+      backendAzureRmResourceGroupName: ${{ parameters.tfstate_storage_account_resource_group_name }}
+      backendAzureRmStorageAccountName: ${{ parameters.tfstate_storage_account_name }}
+      backendAzureRmContainerName: states
+      backendAzureRmKey: "${{ parameters.tfstate_file_name }}"
+
+  - task: TerraformTaskV2@2
+    displayName: 'Terraform Apply ${{ parameters.stage }}'
+    inputs:
+      command: apply
+      commandOptions: '-lock-timeout=10m -var-file="${{ parameters.var_file }}" -input=false -auto-approve'
+      environmentServiceNameAzureRM: ${{ parameters.service_connection_name }}
+      workingDirectory: ${{ parameters.working_path }}
