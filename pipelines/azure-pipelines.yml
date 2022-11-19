@@ -20,22 +20,29 @@ stages:
         parameters:
           artifact_name: 'terraform-main'
           working_path: ${{ variables.tf_script_path }}
-  
-  - stage: dev
+
+  - stage: configuration
     dependsOn: audit
     condition: succeeded('audit')
+    jobs:
+    - job: AzureConfigure
+      displayName: Configure storage account for state files
+      steps:
+      - template: ./templates/steps/azure-setup.yaml
+        parameters:
+          tags: '"UseCase=Terraform"'
+          resource_group_name: ${{ variables.tfstate_storage_account_resource_group_name }}
+          storage_account_name: ${{ variables.tfstate_storage_account_name }}
+          resource_group_location: "eastus"
+          service_connection_name: ${{ variables.service_connection_name }}
+  
+  - stage: dev
+    dependsOn: configuration
+    condition: succeeded('configuration')
     jobs:
     - job: TerraformPlan
       displayName: 'Plan for dev'
       steps:
-      - template: ./templates/azure-setup.yaml
-        parameters:
-          tags: '"UseCase=Terraform" "Stage=$(System.StageName)" "Branch=$(Build.SourceBranch)"'
-          resource_group_name: "${{ variables.project_name }}-$(System.StageName)-rg"
-          storage_account_name: ${{ variables.tfstate_storage_account_name }}
-          resource_group_location: "eastus"
-          service_connection_name: ${{ variables.service_connection_name }}
-
       - template: ./templates/terraform-plan.yaml
         parameters:
           stage: $(System.StageName)
@@ -85,15 +92,7 @@ stages:
       - job: TerraformPlan
         displayName: "Plan for prod"
         dependsOn: ManualValidation
-        steps:
-        - template: ./templates/azure-setup.yaml
-          parameters:
-            tags: '"UseCase=Terraform" "Stage=$(System.StageName)" "Branch=$(Build.SourceBranch)"'
-            resource_group_name: "${{ variables.project_name }}-$(System.StageName)-rg"
-            storage_account_name: ${{ variables.tfstate_storage_account_name }}
-            resource_group_location: "eastus"
-            service_connection_name: ${{ variables.service_connection_name }}
-          
+        steps:  
         - template: ./templates/terraform-plan.yaml
           parameters:
             stage: $(System.StageName)
