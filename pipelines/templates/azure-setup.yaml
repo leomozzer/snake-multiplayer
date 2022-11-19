@@ -24,4 +24,3 @@ steps:
       inlineScript: |
         az storage account create --resource-group ${{ parameters.resource_group_name }} --name ${{ parameters.storage_account_name }} --sku Standard_LRS --kind StorageV2 --encryption-services blob --access-tier Cool --allow-blob-public-access false
         az storage container create --name states --account-name ${{ parameters.storage_account_name }}
-        az storage container create --name plans --account-name ${{ parameters.storage_account_name }}
