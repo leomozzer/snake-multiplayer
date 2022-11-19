@@ -55,7 +55,7 @@ stages:
       - template: ./templates/terraform-apply.yaml
         parameters:
           stage: $(System.StageName)
-          tfstate_storage_account_resource_group_name: ${{ variables.tfstate_storage_account_resource_group_name }}
+          tfstate_storage_account_resource_group_name: ${{ variables.project_name }}-$(System.StageName)-rg
           service_connection_name: ${{ variables.service_connection_name }}
           tfstate_storage_account_name: ${{ variables.tfstate_storage_account_name }}
           tf_version: ${{ variables.tf_version }}
