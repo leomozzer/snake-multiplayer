@@ -9,3 +9,7 @@ variable "repo_url" {
 variable "stage" {
   description = "Stage that the app will be deployed (dev, prod, test)"
 }
+
+variable "sku_name" {
+  description = "SKU of the app service plan"
+}
