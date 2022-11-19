@@ -31,7 +31,7 @@ stages:
       - template: ./templates/azure-setup.yaml
         parameters:
           tags: '"UseCase=Terraform"'
-          resource_group_name: ${{ variables.tfstate_storage_account_resource_group_name }}
+          tfstate_storage_account_resource_group_name: ${{ variables.project_name }}-rg
           storage_account_name: ${{ variables.tfstate_storage_account_name }}
           resource_group_location: "eastus"
           service_connection_name: ${{ variables.service_connection_name }}
