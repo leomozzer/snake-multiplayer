@@ -28,7 +28,7 @@ stages:
     - job: TerraformPlan
       displayName: 'Plan for dev'
       steps:
-      - template: ./templates/steps/azure-setup.yaml
+      - template: ./templates/azure-setup.yaml
         parameters:
           tags: '"UseCase=Terraform" "Stage=$(System.StageName)" "Branch=$(Build.SourceBranch)" "BuildCounter={{ variables.build_counter }}"'
           resource_group_name: "${{ variables.project_name }}-$(System.StageName)-rg"
@@ -36,7 +36,7 @@ stages:
           resource_group_location: "eastus"
           service_connection_name: ${{ variables.service_connection_name }}
 
-      - template: ./templates/steps/terraform-plan.yaml
+      - template: ./templates/terraform-plan.yaml
         parameters:
           stage: $(System.StageName)
           tfstate_storage_account_resource_group_name: ${{ variables.tfstate_storage_account_resource_group_name }}
@@ -52,7 +52,7 @@ stages:
       displayName: "Apply for dev"
       dependsOn: TerraformPlan
       steps:
-      - template: ./templates/steps/terraform-apply.yaml
+      - template: ./templates/terraform-apply.yaml
         parameters:
           stage: $(System.StageName)
           tfstate_storage_account_resource_group_name: ${{ variables.tfstate_storage_account_resource_group_name }}
@@ -86,7 +86,7 @@ stages:
         displayName: "Plan for prod"
         dependsOn: ManualValidation
         steps:
-        - template: ./templates/steps/terraform-plan.yaml
+        - template: ./templates/terraform-plan.yaml
           parameters:
             stage: $(System.StageName)
             tfstate_storage_account_resource_group_name: ${{ variables.tfstate_storage_account_resource_group_name }}
@@ -102,7 +102,7 @@ stages:
         displayName: "Apply for prod"
         dependsOn: TerraformPlan
         steps:
-        - template: ./templates/steps/terraform-apply.yaml
+        - template: ./templates/terraform-apply.yaml
           parameters:
             stage: $(System.StageName)
             tfstate_storage_account_resource_group_name: ${{ variables.tfstate_storage_account_resource_group_name }}
