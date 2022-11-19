@@ -16,7 +16,7 @@ stages:
     - job: tfsec
       displayName: Run tfsec
       steps:
-      - template: ./templates/tfsec/tfsec.yaml
+      - template: ./templates/tfsec.yaml
         parameters:
           artifact_name: 'terraform-live'
           working_path: ${{ variables.tf_script_path }}
