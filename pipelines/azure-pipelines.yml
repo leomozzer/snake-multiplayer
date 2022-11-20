@@ -11,7 +11,7 @@ variables:
   project_name: "snake-multiplayer"
   service_connection_name: "SC-AzureDevOps" 
   tfstate_storage_account_name: "snakemultiplayer"
-  tf_version: 1.2.6
+  tf_version: 1.3.5
   tf_script_path: "$(System.DefaultWorkingDirectory)/terraform-main"
   qualify_image_names: true
 
